@@ -45,7 +45,7 @@ func main() {
 
 	// Create an asynchronous query and get the query ID
 	var queryID string
-	ctx := context.Background()
+	ctx := sf.WithAsyncMode(context.Background())
 	conn, err := db.Conn(ctx)
 	if err != nil {
 		log.Fatalf("failed to get connection: %v", err)
@@ -82,19 +82,23 @@ func main() {
 		if err != nil {
 			if err == sql.ErrNoRows {
 				// No rows returned, skip and wait for 2 seconds
+				log.Printf("query not found yet, waiting...")
 				time.Sleep(2 * time.Second)
 				continue
 			}
 			log.Fatalf("failed to query status: %v", err)
 		}
 		if status == "SUCCESS" {
+			log.Printf("query completed successfully")
 			break
 		}
+		log.Printf("query status: %s, waiting...", status)
 		time.Sleep(2 * time.Second)
 	}
 
-	// Pull the results
-	rows, err := db.Query(fmt.Sprintf("SELECT * FROM TABLE(RESULT_SCAN('%s'))", queryID))
+	// Fetch the results using the query ID
+	fetchResultByIDCtx := sf.WithFetchResultByID(ctx, queryID)
+	rows, err := db.QueryContext(fetchResultByIDCtx, "")
 	if err != nil {
 		log.Fatalf("failed to retrieve results: %v", err)
 	}
