@@ -1,4 +1,4 @@
-# go-playground# go-playground
+# go-playground
 
 ## Overview
 
